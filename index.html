@@ -1,0 +1,62 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inwestycje w Skórzewie</title><link rel="icon" href="logo.jpg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font:14px/1.4 system-ui,sans-serif;display:flex;flex-direction:column;height:100dvh;color:#1d2733}
+header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 12px;background:#fff;color:#1d2733;border-bottom:4px solid;border-image:linear-gradient(90deg,#0b6fc2,#e32b2b,#f2b705,#2e8b3d) 1}.lg{height:50px;width:auto;display:block}@media(max-width:800px){.lg{height:40px}}
+h1{font-size:17px;margin:0;flex:1}header input{padding:7px 10px;border:1px solid #b9c3cf;border-radius:6px;min-width:170px}
+main{flex:1;display:grid;grid-template-columns:1fr 350px;min-height:0}#map{min-height:0}
+aside{overflow:auto;padding:10px;border-left:1px solid #d5dbe2}
+@media(max-width:800px){main{grid-template-columns:1fr;grid-template-rows:48% 52%}aside{border:0;border-top:1px solid #d5dbe2}}
+.g{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+button{font:inherit;padding:6px 10px;border:1px solid #b9c3cf;border-radius:6px;background:#fff;cursor:pointer;display:flex;gap:6px;align-items:center}
+button.a{background:#1f3a5f;color:#fff;border-color:#1f3a5f}button span{opacity:.7}
+button i,li i{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+#sum{font-size:13px;margin:6px 0 8px;color:#4a5a6a}ul{list-style:none;margin:0;padding:0}
+li{padding:7px 6px;border-bottom:1px solid #e7ebf0;cursor:pointer;display:flex;gap:8px;align-items:flex-start}li i{margin-top:5px}li.h{background:#eef4fb}
+.m{width:18px;height:18px;border:2px solid #fff;box-shadow:0 0 3px #0008;opacity:.5;margin:2px}
+.m.on{opacity:1;width:22px;height:22px;margin:0}.m.budowa{border-radius:50%}
+.m.projekt{transform:rotate(45deg);width:14px;height:14px;margin:4px}.m.projekt.on{width:18px;height:18px;margin:2px}
+.tr{display:flex;gap:3px;margin:6px 0 2px}.tr i{flex:1;height:6px;border-radius:3px}
+.pb{height:8px;background:#e1e6ec;border-radius:4px;overflow:hidden;margin-top:8px}.pb div{height:100%}
+.leaflet-popup-content p{margin:4px 0}small{color:#5b6b7b}
+footer{padding:5px 12px;font-size:12px;color:#5b6b7b;border-top:1px solid #d5dbe2;text-align:center}
+</style></head><body>
+<header><img class="lg" src="logo.jpg" alt="Skórzewo 360"><h1>Inwestycje w Skórzewie</h1><input id="q" type="search" placeholder="Szukaj po nazwie ulicy…"></header>
+<main><div id="map"></div><aside><div class="g" id="ty"></div><div class="g" id="st"></div><div id="sum"></div><ul id="ls"></ul></aside></main>
+<footer>Na podstawie artykułu w Czasie Dopiewa.<br>To nie jest portal oficjalny i nie jest w żaden sposób powiązany z Urzędem Gminy. Strona jest wyłącznie narzędziem pomocniczym do podglądu stopnia realizacji inwestycji.</footer>
+<script src="common.js"></script>
+<script>
+const $=id=>document.getElementById(id);let D=[],ty="budowa",st=0,mk={};
+const map=mapInit("map"),cl=L.markerClusterGroup({disableClusteringAtZoom:17,maxClusterRadius:30}).addTo(map);
+function card(i){const t=T[i.type],p=prog(i),c=t.c[i.stage-1];
+ let h=`<b>${i.name}</b><div class="tr">`+t.s.map((s,k)=>`<i title="${s}" style="background:${k<i.stage?c:"#dde2e8"}"></i>`).join("")+`</div><small>${i.stage}/${t.s.length}: ${t.s[i.stage-1]}</small>`;
+ if(i.cost)h+=`<p>Koszt: <b>${zl(i.cost)}</b></p>`;
+ if(i.signed)h+=`<p>Umowa podpisana: <b>${dt(i.signed).toLocaleDateString("pl-PL")}</b></p>`;
+ if(i.dur)h+=`<p>Czas trwania umowy: <b>${i.dur} ${i.unit}</b></p>`;
+ if(p)h+=`<div class="pb"><div style="width:${p.p*100}%;background:${p.late?"#d33":c}"></div></div><small>${Math.round(p.p*100)}% czasu, ${p.late?"po terminie (koniec ":"koniec "}${p.e.toLocaleDateString("pl-PL")}${p.late?")":""}</small>`;
+ return h}
+function hl(id){document.querySelectorAll("#ls li").forEach(l=>{const on=l.dataset.id===id;l.classList.toggle("h",on);if(on)l.scrollIntoView({block:"nearest"})})}
+function render(){
+ const Q=$("q").value.toLowerCase(),S=D.filter(i=>i.type===ty&&(!st||i.stage===st)&&i.name.toLowerCase().includes(Q)),ids=new Set(S.map(i=>i.id));
+ cl.clearLayers();mk={};
+ D.forEach(i=>{const on=ids.has(i.id),m=L.marker([i.lat,i.lng],{icon:mIcon(i.type,on?T[i.type].c[i.stage-1]:"#8a949e",on),zIndexOffset:on?1000:0}).bindPopup(()=>card(i));
+  m.on("click",()=>hl(i.id));mk[i.id]=m;cl.addLayer(m)});
+ const my=D.filter(i=>i.type===ty);
+ $("ty").innerHTML=Object.keys(T).map(k=>`<button data-t="${k}" class="${k===ty?"a":""}">${T[k].n} <span>${D.filter(i=>i.type===k).length}</span></button>`).join("");
+ $("st").innerHTML=`<button data-s="0" class="${st?"":"a"}">Wszystkie <span>${my.length}</span></button>`+T[ty].s.map((s,k)=>`<button data-s="${k+1}" class="${st===k+1?"a":""}"><i style="background:${T[ty].c[k]}"></i>${s} <span>${my.filter(i=>i.stage===k+1).length}</span></button>`).join("");
+ const w=S.filter(i=>i.cost);
+ $("sum").textContent=`Wybrane: ${S.length}`+(w.length?` · łączny koszt ${zl(w.reduce((a,i)=>a+ +i.cost,0))} (podany dla ${w.length} z ${S.length})`:"");
+ $("ls").innerHTML=S.length?S.map(i=>`<li data-id="${i.id}"><i style="background:${T[i.type].c[i.stage-1]}"></i><div>${i.name}<br><small>${T[i.type].s[i.stage-1]}</small></div></li>`).join(""):"<li>Brak inwestycji dla wybranych filtrów.</li>";
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-t],[data-s],li[data-id]");if(!b)return;
+ if(b.dataset.t){ty=b.dataset.t;st=0;render()}
+ else if(b.dataset.s!==undefined){st=+b.dataset.s;render()}
+ else{const m=mk[b.dataset.id];hl(b.dataset.id);cl.zoomToShowLayer(m,()=>{map.setView(m.getLatLng(),Math.max(map.getZoom(),17));m.openPopup()})}});
+$("q").oninput=render;
+load().then(x=>{D=x;render();if(D.length)map.fitBounds(L.latLngBounds(D.map(i=>[i.lat,i.lng])).pad(.1))});
+</script></body></html>
