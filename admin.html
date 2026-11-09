@@ -22,6 +22,7 @@ li{padding:5px 8px;border-bottom:1px solid #e7ebf0;cursor:pointer;font-size:13px
 <label>Nazwa<input id="name"></label>
 <label>Typ<select id="type"><option value="budowa">Budowa</option><option value="projekt">Projekt</option></select></label>
 <label>Etap<select id="stage"></select></label>
+<label>Status<select id="status"><option value="">Brak</option><option value="unieważnione">Postępowanie unieważnione</option><option value="wstrzymane">Wstrzymane</option></select></label>
 <div class="r"><label>Szerokość<input id="lat" type="number" step="any"></label><label>Długość<input id="lng" type="number" step="any"></label></div>
 <label>Status lokalizacji<select id="coordStatus"><option>przybliżona</option><option>zatwierdzona</option></select></label>
 <label>Koszt zadania (zł)<input id="cost" type="number" min="0"></label>
@@ -32,24 +33,24 @@ li{padding:5px 8px;border-bottom:1px solid #e7ebf0;cursor:pointer;font-size:13px
 <script>
 const $=id=>document.getElementById(id);let D=[],cur=null,pw=sessionStorage.pw||"",mk={},map,dirty=false;
 const api=b=>fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:pw,...b})});
-const F=["name","type","stage","lat","lng","coordStatus","cost","signed","dur","unit"];
+const F=["name","type","stage","lat","lng","coordStatus","cost","signed","dur","unit","status"];
 const mark=d=>{dirty=d;$("msg").textContent=d?"Niezapisane zmiany":""};
 $("go").onclick=async()=>{pw=$("pw").value;const r=await api({});if(r.ok){sessionStorage.pw=pw;start()}else $("err").textContent="Błędne hasło lub brak ustawionej zmiennej ADMIN_PASSWORD."};
 if(pw)api({}).then(r=>r.ok&&start());
 async function start(){$("login").style.display="none";$("app").classList.add("on");map=mapInit("map");D=await load();draw();
  if(D.length)map.fitBounds(L.latLngBounds(D.map(i=>[i.lat,i.lng])).pad(.1))}
 function draw(){Object.values(mk).forEach(m=>m.remove());mk={};
- D.forEach(i=>{const on=cur&&cur.id===i.id,m=L.marker([i.lat,i.lng],{draggable:true,zIndexOffset:on?1000:0,icon:mIcon("budowa",i.coordStatus==="zatwierdzona"?"#2e9e4f":"#f59e0b",on)}).addTo(map).bindTooltip(i.name);
+ D.forEach(i=>{const on=cur&&cur.id===i.id,m=L.marker([i.lat,i.lng],{draggable:true,zIndexOffset:on?1000:0,icon:mIcon("budowa",i.coordStatus==="zatwierdzona"?"#2e9e4f":"#f59e0b",on,i.status)}).addTo(map).bindTooltip(i.name);
   m.on("click",()=>pick(i.id));
   m.on("dragend",e=>{const p=e.target.getLatLng();i.lat=+p.lat.toFixed(6);i.lng=+p.lng.toFixed(6);i.coordStatus="zatwierdzona";mark(true);pick(i.id)});mk[i.id]=m});
- $("ls").innerHTML=D.map(i=>`<li data-id="${i.id}" class="${cur&&cur.id===i.id?"h":""}">${i.name}<br><small class="${i.coordStatus==="zatwierdzona"?"ok":""}">${T[i.type].n.slice(0,-1)} · ${i.coordStatus}</small></li>`).join("")}
+ $("ls").innerHTML=D.map(i=>`<li data-id="${i.id}" class="${cur&&cur.id===i.id?"h":""}">${i.name}<br><small class="${i.coordStatus==="zatwierdzona"?"ok":""}">${T[i.type].n.slice(0,-1)} · ${i.coordStatus}${ST[i.status]?" · "+ST[i.status].n:""}</small></li>`).join("")}
 function pick(id){cur=D.find(i=>i.id===id);fill();draw();const l=document.querySelector(`li[data-id="${id}"]`);l&&l.scrollIntoView({block:"nearest"})}
 function fill(){$("f").hidden=!cur;if(!cur)return;
  $("stage").innerHTML=T[cur.type].s.map((s,k)=>`<option value="${k+1}">${k+1}. ${s}</option>`).join("");
  F.forEach(k=>$(k).value=cur[k]??"")}
 $("ls").onclick=e=>{const l=e.target.closest("li");if(l){pick(l.dataset.id);map.setView([cur.lat,cur.lng],Math.max(map.getZoom(),16))}};
 F.forEach(k=>$(k).onchange=()=>{if(!cur)return;let v=$(k).value;
- if(["stage","lat","lng"].includes(k))v=+v;if(["cost","dur"].includes(k))v=v===""?null:+v;if(k==="signed")v=v||null;
+ if(["stage","lat","lng"].includes(k))v=+v;if(["cost","dur"].includes(k))v=v===""?null:+v;if(k==="signed"||k==="status")v=v||null;
  cur[k]=v;if(k==="type")cur.stage=1;if(k==="lat"||k==="lng")cur.coordStatus="zatwierdzona";mark(true);fill();draw()});
 $("add").onclick=()=>{const c=map.getCenter(),i={id:"n"+Date.now(),name:"Nowa inwestycja",type:"projekt",stage:1,lat:+c.lat.toFixed(6),lng:+c.lng.toFixed(6),coordStatus:"przybliżona",cost:null,signed:null,dur:null,unit:"miesięcy"};
  D.push(i);mark(true);pick(i.id)};

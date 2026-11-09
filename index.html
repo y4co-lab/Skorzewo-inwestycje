@@ -20,7 +20,7 @@ li{padding:7px 6px;border-bottom:1px solid #e7ebf0;cursor:pointer;display:flex;g
 .m.projekt{transform:rotate(45deg);width:14px;height:14px;margin:4px}.m.projekt.on{width:18px;height:18px;margin:2px}
 .tr{display:flex;gap:3px;margin:6px 0 2px}.tr i{flex:1;height:6px;border-radius:3px}
 .pb{height:8px;background:#e1e6ec;border-radius:4px;overflow:hidden;margin-top:8px}.pb div{height:100%}
-.leaflet-popup-content p{margin:4px 0}small{color:#5b6b7b}
+.leaflet-popup-content p{margin:4px 0}small{color:#5b6b7b}.bd{display:inline-block;color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;margin-top:4px}
 footer{padding:5px 12px;font-size:12px;color:#5b6b7b;border-top:1px solid #d5dbe2;text-align:center}
 </style></head><body>
 <header><img class="lg" src="logo.jpg" alt="Skórzewo 360"><h1>Inwestycje w Skórzewie</h1><input id="q" type="search" placeholder="Szukaj po nazwie ulicy…"></header>
@@ -31,7 +31,7 @@ footer{padding:5px 12px;font-size:12px;color:#5b6b7b;border-top:1px solid #d5dbe
 const $=id=>document.getElementById(id);let D=[],ty="budowa",st=0,mk={};
 const map=mapInit("map"),cl=L.layerGroup().addTo(map);
 function card(i){const t=T[i.type],p=prog(i),c=t.c[i.stage-1];
- let h=`<b>${i.name}</b><div class="tr">`+t.s.map((s,k)=>`<i title="${s}" style="background:${k<i.stage?c:"#dde2e8"}"></i>`).join("")+`</div><small>${i.stage}/${t.s.length}: ${t.s[i.stage-1]}</small>`;
+ let h=`<b>${i.name}</b>${ST[i.status]?`<br><span class="bd" style="background:${ST[i.status].c}">${ST[i.status].n}</span>`:""}<div class="tr">`+t.s.map((s,k)=>`<i title="${s}" style="background:${k<i.stage?c:"#dde2e8"}"></i>`).join("")+`</div><small>${i.stage}/${t.s.length}: ${t.s[i.stage-1]}</small>`;
  if(i.cost)h+=`<p>Koszt: <b>${zl(i.cost)}</b></p>`;
  if(i.signed)h+=`<p>Umowa podpisana: <b>${dt(i.signed).toLocaleDateString("pl-PL")}</b></p>`;
  if(i.dur)h+=`<p>Czas trwania umowy: <b>${i.dur} ${i.unit}</b></p>`;
@@ -41,14 +41,14 @@ function hl(id){document.querySelectorAll("#ls li").forEach(l=>{const on=l.datas
 function render(){
  const Q=$("q").value.toLowerCase(),S=D.filter(i=>i.type===ty&&(!st||i.stage===st)&&i.name.toLowerCase().includes(Q)),ids=new Set(S.map(i=>i.id));
  cl.clearLayers();mk={};
- D.forEach(i=>{const on=ids.has(i.id),m=L.marker([i.lat,i.lng],{icon:mIcon(i.type,on?T[i.type].c[i.stage-1]:"#8a949e",on),zIndexOffset:on?1000:0}).bindPopup(()=>card(i));
+ D.forEach(i=>{const on=ids.has(i.id),m=L.marker([i.lat,i.lng],{icon:mIcon(i.type,on?T[i.type].c[i.stage-1]:"#8a949e",on,i.status),zIndexOffset:on?1000:0}).bindPopup(()=>card(i));
   m.on("click",()=>hl(i.id));mk[i.id]=m;cl.addLayer(m)});
  const my=D.filter(i=>i.type===ty);
  $("ty").innerHTML=Object.keys(T).map(k=>`<button data-t="${k}" class="${k===ty?"a":""}">${T[k].n} <span>${D.filter(i=>i.type===k).length}</span></button>`).join("");
  $("st").innerHTML=`<button data-s="0" class="${st?"":"a"}">Wszystkie <span>${my.length}</span></button>`+T[ty].s.map((s,k)=>`<button data-s="${k+1}" class="${st===k+1?"a":""}"><i style="background:${T[ty].c[k]}"></i>${s} <span>${my.filter(i=>i.stage===k+1).length}</span></button>`).join("");
  const w=S.filter(i=>i.cost);
  $("sum").textContent=`Wybrane: ${S.length}`+(w.length?` · łączny koszt ${zl(w.reduce((a,i)=>a+ +i.cost,0))} (podany dla ${w.length} z ${S.length})`:"");
- $("ls").innerHTML=S.length?S.map(i=>`<li data-id="${i.id}"><i style="background:${T[i.type].c[i.stage-1]}"></i><div>${i.name}<br><small>${T[i.type].s[i.stage-1]}</small></div></li>`).join(""):"<li>Brak inwestycji dla wybranych filtrów.</li>";
+ $("ls").innerHTML=S.length?S.map(i=>`<li data-id="${i.id}"><i style="background:${T[i.type].c[i.stage-1]}"></i><div>${i.name}<br><small>${T[i.type].s[i.stage-1]}${ST[i.status]?` · <b style="color:${ST[i.status].c}">${ST[i.status].n}</b>`:""}</small></div></li>`).join(""):"<li>Brak inwestycji dla wybranych filtrów.</li>";
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-t],[data-s],li[data-id]");if(!b)return;
  if(b.dataset.t){ty=b.dataset.t;st=0;render()}

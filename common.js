@@ -12,4 +12,5 @@ const mapInit=id=>{const m=L.map(id).setView([52.416,16.764],14);
  const s=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri"});
  const g=L.tileLayer("https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMTS/StandardResolution?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTOFOTOMAPA&STYLE=default&FORMAT=image/jpeg&TILEMATRIXSET=EPSG:3857&TILEMATRIX=EPSG:3857:{z}&TILEROW={y}&TILECOL={x}",{maxZoom:19,attribution:"© GUGiK (Geoportal)"});
  L.control.layers({"Mapa":o,"Ortofoto (Geoportal)":g,"Ortofoto (Esri)":s}).addTo(m);return m};
-const mIcon=(t,c,on)=>L.divIcon({className:"",iconSize:[22,22],html:`<div class="m ${t}${on?" on":""}" style="background:${c}"></div>`});
+const ST={"unieważnione":{n:"Postępowanie unieważnione",c:"#c62828"},"wstrzymane":{n:"Wstrzymane",c:"#5d4037"}};
+const mIcon=(t,c,on,s)=>L.divIcon({className:"",iconSize:[22,22],html:`<div class="m ${t}${on?" on":""}" style="background:${c}${ST[s]?";border:3px solid "+ST[s].c:""}"></div>`});
