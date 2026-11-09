@@ -34,7 +34,7 @@ function card(i){const t=T[i.type],p=prog(i),c=t.c[i.stage-1];
  if(i.cost)h+=`<p>Koszt zapisany w umowie: <b>${zl(i.cost)}</b></p>`;
  if(i.signed)h+=`<p>Umowa podpisana: <b>${dt(i.signed).toLocaleDateString("pl-PL")}</b></p>`;
  if(i.dur)h+=`<p>Czas trwania umowy: <b>${i.dur} ${i.unit}</b></p>`;
- if(p)h+=`<div class="pb"><div style="width:${p.p*100}%;background:${p.late?"#d33":c}"></div></div><small>${Math.round(p.p*100)}% czasu, ${p.late?"po terminie (koniec ":"koniec "}${p.e.toLocaleDateString("pl-PL")}${p.late?")":""}</small>`;
+ if(p&&i.stage===t.s.length)h+=`<div class="pb"><div style="width:100%;background:${c}"></div></div><small>Zakończone (termin umowy: ${p.e.toLocaleDateString("pl-PL")})</small>`;else if(p)h+=`<div class="pb"><div style="width:${p.p*100}%;background:${p.late?"#d33":c}"></div></div><small>${Math.round(p.p*100)}% czasu, ${p.late?"po terminie (koniec ":"koniec "}${p.e.toLocaleDateString("pl-PL")}${p.late?")":""}</small>`;
  return h}
 function hl(id){document.querySelectorAll("#ls li").forEach(l=>{const on=l.dataset.id===id;l.classList.toggle("h",on);if(on)l.scrollIntoView({block:"nearest"})})}
 function render(){
@@ -47,7 +47,7 @@ function render(){
  $("st").innerHTML=`<button data-s="0" class="${st?"":"a"}">Wszystkie <span>${my.length}</span></button>`+T[ty].s.map((s,k)=>`<button data-s="${k+1}" class="${st===k+1?"a":""}"><i style="background:${T[ty].c[k]}"></i>${s} <span>${my.filter(i=>i.stage===k+1).length}</span></button>`).join("");
  const w=S.filter(i=>i.cost);
  $("sum").textContent=`${Q?"Znaleziono":"Wybrane"}: ${S.length}`+(w.length?` · łączny koszt wg umów ${zl(w.reduce((a,i)=>a+ +i.cost,0))} (podany dla ${w.length} z ${S.length})`:"");
- $("ls").innerHTML=S.length?S.map(i=>`<li data-id="${i.id}"><i style="background:${T[i.type].c[i.stage-1]}"></i><div>${i.name}<br><small>${Q?T[i.type].n.slice(0,-1)+" · ":""}${T[i.type].s[i.stage-1]}${ST[i.status]?` · <b style="color:${ST[i.status].c}">${ST[i.status].n}</b>`:""}</small></div></li>`).join(""):`<li>${Q?"Brak wyników wyszukiwania.":"Brak inwestycji dla wybranych filtrów."}</li>`;
+ $("ls").innerHTML=S.length?S.map(i=>`<li data-id="${i.id}"><i style="background:${T[i.type].c[i.stage-1]}"></i><div>${i.name}<br><small>${Q?T[i.type].o+" · ":""}${T[i.type].s[i.stage-1]}${ST[i.status]?` · <b style="color:${ST[i.status].c}">${ST[i.status].n}</b>`:""}</small></div></li>`).join(""):`<li>${Q?"Brak wyników wyszukiwania.":"Brak inwestycji dla wybranych filtrów."}</li>`;
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-t],[data-s],li[data-id]");if(!b)return;
  if(b.dataset.t){ty=b.dataset.t;st=0;render()}

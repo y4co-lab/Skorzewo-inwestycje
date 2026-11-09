@@ -1,6 +1,6 @@
-const T={budowa:{n:"Budowy",s:["Prace przygotowawcze","Etap projektowy","Zamówienie publiczne","Etap wykonawczy","Zrealizowana"],c:["#7e57c2","#1e88e5","#e91e63","#ff8f00","#2e9e4f"]},
-projekt:{n:"Projekty",s:["Przygotowanie OPZ","Wybór wykonawcy","W trakcie realizacji","Projekt wykonany"],c:["#7e57c2","#1e88e5","#ff8f00","#2e9e4f"]}};
-const zl=v=>Number(v).toLocaleString("pl-PL",{style:"currency",currency:"PLN",maximumFractionDigits:0});
+const T={budowa:{n:"Budowy",o:"Budowa",s:["Prace przygotowawcze","Etap projektowy","Zamówienie publiczne","Etap wykonawczy","Zrealizowana"],c:["#7e57c2","#1e88e5","#e91e63","#ff8f00","#2e9e4f"]},
+projekt:{n:"Projekty",o:"Projekt",s:["Przygotowanie OPZ","Wybór wykonawcy","W trakcie realizacji","Projekt wykonany"],c:["#7e57c2","#1e88e5","#ff8f00","#2e9e4f"]}};
+const zl=v=>Number(v).toLocaleString("pl-PL",{style:"currency",currency:"PLN",minimumFractionDigits:0,maximumFractionDigits:2});
 const dt=s=>new Date(s+"T00:00:00");
 function prog(i){if(!i.signed||!i.dur)return null;const a=dt(i.signed),e=new Date(a);
  if(i.unit==="dni")e.setDate(e.getDate()+ +i.dur);else e.setMonth(e.getMonth()+ +i.dur);

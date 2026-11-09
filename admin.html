@@ -16,7 +16,7 @@ li{padding:5px 8px;border-bottom:1px solid #e7ebf0;cursor:pointer;font-size:13px
 .m{width:18px;height:18px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 3px #000a;margin:2px}.m.on{width:24px;height:24px;margin:-1px;border-color:#1f3a5f}
 #msg{font-size:13px}.e{color:#d33}
 </style></head><body>
-<header><img class="lg" src="logo.jpg" alt="Skórzewo 360"><h1>Panel administratora</h1><span id="msg"></span><button id="exp">Eksport (Excel)</button><button id="imp">Import (Excel)</button><input id="file" type="file" accept=".xlsx,.xls" hidden><button id="add">Nowa inwestycja</button><button id="save" class="p">Zapisz zmiany</button></header>
+<header><img class="lg" src="logo.jpg" alt="Skórzewo 360"><h1>Panel administratora</h1><span id="msg"></span><button id="exp">Eksport (Excel)</button><button id="imp">Import: uzupełnij</button><button id="imp2">Import: zastąp</button><input id="file" type="file" accept=".xlsx,.xls" hidden><button id="add">Nowa inwestycja</button><button id="save" class="p">Zapisz zmiany</button></header>
 <div id="login"><b>Hasło administratora</b><input id="pw" type="password"><button id="go" class="p">Zaloguj</button><span id="err" class="e"></span></div>
 <div id="app"><div id="map"></div><aside><ul id="ls"></ul><div id="f" hidden>
 <label>Nazwa<input id="name"></label>
@@ -44,7 +44,7 @@ function draw(){Object.values(mk).forEach(m=>m.remove());mk={};
  D.forEach(i=>{const on=cur&&cur.id===i.id,m=L.marker([i.lat,i.lng],{draggable:true,zIndexOffset:on?1000:0,icon:mIcon("budowa",i.coordStatus==="zatwierdzona"?"#2e9e4f":"#f59e0b",on,i.status)}).addTo(map).bindTooltip(i.name);
   m.on("click",()=>pick(i.id));
   m.on("dragend",e=>{const p=e.target.getLatLng();i.lat=+p.lat.toFixed(6);i.lng=+p.lng.toFixed(6);i.coordStatus="zatwierdzona";mark(true);pick(i.id)});mk[i.id]=m});
- $("ls").innerHTML=D.map(i=>`<li data-id="${i.id}" class="${cur&&cur.id===i.id?"h":""}">${i.name}<br><small class="${i.coordStatus==="zatwierdzona"?"ok":""}">${T[i.type].n.slice(0,-1)} · ${i.coordStatus}${ST[i.status]?" · "+ST[i.status].n:""}</small></li>`).join("")}
+ $("ls").innerHTML=D.map(i=>`<li data-id="${i.id}" class="${cur&&cur.id===i.id?"h":""}">${i.name}<br><small class="${i.coordStatus==="zatwierdzona"?"ok":""}">${T[i.type].o} · ${i.coordStatus}${ST[i.status]?" · "+ST[i.status].n:""}</small></li>`).join("")}
 function pick(id){cur=D.find(i=>i.id===id);fill();draw();const l=document.querySelector(`li[data-id="${id}"]`);l&&l.scrollIntoView({block:"nearest"})}
 function fill(){$("f").hidden=!cur;if(!cur)return;
  $("stage").innerHTML=T[cur.type].s.map((s,k)=>`<option value="${k+1}">${k+1}. ${s}</option>`).join("");
@@ -68,16 +68,17 @@ const dat=v=>{if(v instanceof Date&&!isNaN(v)){const x=new Date(v.getTime()+432e
 const unitN=v=>{const s=String(v).trim().toLowerCase();return s.startsWith("d")?"dni":s.startsWith("m")?"miesięcy":null};
 const statN=v=>{const s=String(v).trim().toLowerCase();if(!s)return undefined;if(s.startsWith("uniew"))return"unieważnione";if(s.startsWith("wstrz"))return"wstrzymane";return s==="brak"?null:undefined};
 $("exp").onclick=()=>{const H=["ID","Typ","Nazwa inwestycji","Obecny etap","Koszt zadania (zł)","Data podpisania umowy","Czas trwania umowy","Jednostka (dni / miesięcy)","Status (brak / unieważnione / wstrzymane)"];
- const A=[H,...D.map(i=>[i.id,T[i.type].n.slice(0,-1),i.name,T[i.type].s[i.stage-1],i.cost??"",i.signed??"",i.dur??"",i.dur?i.unit:"",i.status||""])];
+ const A=[H,...D.map(i=>[i.id,T[i.type].o,i.name,T[i.type].s[i.stage-1],i.cost??"",i.signed??"",i.dur??"",i.dur?i.unit:"",i.status||""])];
  const ws=XLSX.utils.aoa_to_sheet(A);ws["!cols"]=[8,10,58,24,18,20,16,18,26].map(w=>({wch:w}));
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Inwestycje");XLSX.writeFile(wb,"inwestycje-skorzewo.xlsx")};
-$("imp").onclick=()=>$("file").click();
+let mode=false;$("imp").onclick=()=>{mode=false;$("file").click()};$("imp2").onclick=()=>{mode=true;$("file").click()};
 $("file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
  try{const wb=XLSX.read(await f.arrayBuffer(),{cellDates:true});
   const rows=XLSX.utils.sheet_to_json(wb.Sheets["Inwestycje"]||wb.Sheets[wb.SheetNames[0]],{defval:""});
+  if(mode&&!confirm("Tryb „zastąp”: puste komórki w pliku USUNĄ koszt, datę i czas trwania z inwestycji (status i etap bez zmian). Kontynuować?"))return;
   let n=0;const miss=[];
   rows.forEach(r=>{const id=String(g(r,"ID")).trim();if(!id)return;const i=D.find(x=>x.id===id);if(!i){miss.push(id);return}
-   let ch=false;const set=(k,v)=>{if(v!==null&&i[k]!==v){i[k]=v;ch=true}};
+   let ch=false;const set=(k,v)=>{if(v===null){if(mode&&["cost","signed","dur"].includes(k)&&i[k]!=null){i[k]=null;ch=true}}else if(i[k]!==v){i[k]=v;ch=true}};
    set("cost",num(g(r,"Koszt")));set("signed",dat(g(r,"Data")));set("dur",num(g(r,"Czas")));set("unit",unitN(g(r,"Jednostka")));
    const s=statN(g(r,"Status"));if(s!==undefined&&(i.status||null)!==s){i.status=s;ch=true}
    if(ch)n++});
