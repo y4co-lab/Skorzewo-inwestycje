@@ -20,12 +20,11 @@ li{padding:7px 6px;border-bottom:1px solid #e7ebf0;cursor:pointer;display:flex;g
 .m.projekt{transform:rotate(45deg);width:14px;height:14px;margin:4px}.m.projekt.on{width:18px;height:18px;margin:2px}
 .tr{display:flex;gap:3px;margin:6px 0 2px}.tr i{flex:1;height:6px;border-radius:3px}
 .pb{height:8px;background:#e1e6ec;border-radius:4px;overflow:hidden;margin-top:8px}.pb div{height:100%}
-.leaflet-popup-content p{margin:4px 0}small{color:#5b6b7b}.bd{display:inline-block;color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;margin-top:4px}
-footer{padding:5px 12px;font-size:12px;color:#5b6b7b;border-top:1px solid #d5dbe2;text-align:center}
+.leaflet-popup-content p{margin:4px 0}small{color:#5b6b7b}.nt{padding:4px 12px;font-size:9px;line-height:1.35;color:#5b6b7b;background:#f3f6f9;border-bottom:1px solid #d5dbe2}.bd{display:inline-block;color:#fff;font-size:12px;padding:2px 8px;border-radius:10px;margin-top:4px}
 </style></head><body>
 <header><img class="lg" src="logo.jpg" alt="Skórzewo 360"><h1>Inwestycje w Skórzewie</h1><input id="q" type="search" placeholder="Szukaj ulicy (Budowy i Projekty)…"></header>
+<div class="nt">To nie jest oficjalny portal ani strona powiązana z Urzędem Gminy. Jest to wyłącznie narzędzie pomocnicze do podglądu stopnia realizacji inwestycji. Dane pochodzą ze sprawozdań z działalności Wójta oraz zestawienia inwestycji publikowanego w „Czasie Dopiewa”.</div>
 <main><div id="map"></div><aside><div class="g" id="ty"></div><div class="g" id="st"></div><div id="sum"></div><ul id="ls"></ul></aside></main>
-<footer>Na podstawie artykułu w Czasie Dopiewa.<br>To nie jest portal oficjalny i nie jest w żaden sposób powiązany z Urzędem Gminy. Strona jest wyłącznie narzędziem pomocniczym do podglądu stopnia realizacji inwestycji.</footer>
 <script src="common.js"></script>
 <script>
 const $=id=>document.getElementById(id);const nz=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ł/g,"l").trim();let D=[],ty="budowa",st=0,mk={};
