@@ -16,7 +16,7 @@ li{padding:5px 8px;border-bottom:1px solid #e7ebf0;cursor:pointer;font-size:13px
 .m{width:18px;height:18px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 3px #000a;margin:2px}.m.on{width:24px;height:24px;margin:-1px;border-color:#1f3a5f}
 #msg{font-size:13px}.e{color:#d33}
 </style></head><body>
-<header><img class="lg" src="logo.jpg" alt="Skórzewo 360"><h1>Panel administratora</h1><span id="msg"></span><button id="exp">Eksport (Excel)</button><button id="imp">Import: uzupełnij</button><button id="imp2">Import: zastąp</button><input id="file" type="file" accept=".xlsx,.xls" hidden><button id="add">Nowa inwestycja</button><button id="save" class="p">Zapisz zmiany</button></header>
+<header><img class="lg" src="logo.jpg" alt="Skórzewo 360"><h1>Panel administratora</h1><span id="msg"></span><button id="lock">🔒 Pozycje zablokowane</button><button id="exp">Eksport (Excel)</button><button id="imp">Import: uzupełnij</button><button id="imp2">Import: zastąp</button><input id="file" type="file" accept=".xlsx,.xls" hidden><button id="add">Nowa inwestycja</button><button id="save" class="p">Zapisz zmiany</button></header>
 <div id="login"><b>Hasło administratora</b><input id="pw" type="password"><button id="go" class="p">Zaloguj</button><span id="err" class="e"></span></div>
 <div id="app"><div id="map"></div><aside><ul id="ls"></ul><div id="f" hidden>
 <label>Nazwa<input id="name"></label>
@@ -28,12 +28,12 @@ li{padding:5px 8px;border-bottom:1px solid #e7ebf0;cursor:pointer;font-size:13px
 <label>Koszt zadania (zł)<input id="cost" type="number" min="0"></label>
 <label>Data podpisania umowy<input id="signed" type="date"></label>
 <div class="r"><label>Czas trwania umowy<input id="dur" type="number" min="0"></label><label>Jednostka<select id="unit"><option>dni</option><option>miesięcy</option></select></label></div>
-<button id="del">Usuń inwestycję</button></div><p><small>Przeciągnij znacznik na mapie, aby poprawić lokalizację. Puste pola nie są pokazywane użytkownikom.</small></p></aside></div>
+<button id="del">Usuń inwestycję</button></div><p><small>Aby przesunąć punkt, odblokuj pozycje przyciskiem u góry, a potem przeciągnij znacznik. Puste pola nie są pokazywane użytkownikom.</small></p></aside></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="common.js"></script>
 <script>
 const $=id=>document.getElementById(id);let D=[],cur=null,pw=sessionStorage.pw||"",mk={},map,dirty=false;
-const api=b=>fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:pw,...b})});
+let lock=true;const api=b=>fetch("/api/data",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:pw,...b})});
 const F=["name","type","stage","lat","lng","coordStatus","cost","signed","dur","unit","status"];
 const mark=d=>{dirty=d;$("msg").textContent=d?"Niezapisane zmiany":""};
 $("go").onclick=async()=>{pw=$("pw").value;const r=await api({});if(r.ok){sessionStorage.pw=pw;start()}else $("err").textContent="Błędne hasło lub brak ustawionej zmiennej ADMIN_PASSWORD."};
@@ -41,7 +41,7 @@ if(pw)api({}).then(r=>r.ok&&start());
 async function start(){$("login").style.display="none";$("app").classList.add("on");map=mapInit("map");D=await load();draw();
  if(D.length)map.fitBounds(L.latLngBounds(D.map(i=>[i.lat,i.lng])).pad(.1))}
 function draw(){Object.values(mk).forEach(m=>m.remove());mk={};
- D.forEach(i=>{const on=cur&&cur.id===i.id,m=L.marker([i.lat,i.lng],{draggable:true,zIndexOffset:on?1000:0,icon:mIcon("budowa",i.coordStatus==="zatwierdzona"?"#2e9e4f":"#f59e0b",on,i.status)}).addTo(map).bindTooltip(i.name);
+ D.forEach(i=>{const on=cur&&cur.id===i.id,m=L.marker([i.lat,i.lng],{draggable:!lock,zIndexOffset:on?1000:0,icon:mIcon("budowa",i.coordStatus==="zatwierdzona"?"#2e9e4f":"#f59e0b",on,i.status)}).addTo(map).bindTooltip(i.name);
   m.on("click",()=>pick(i.id));
   m.on("dragend",e=>{const p=e.target.getLatLng();i.lat=+p.lat.toFixed(6);i.lng=+p.lng.toFixed(6);i.coordStatus="zatwierdzona";mark(true);pick(i.id)});mk[i.id]=m});
  $("ls").innerHTML=D.map(i=>`<li data-id="${i.id}" class="${cur&&cur.id===i.id?"h":""}">${i.name}<br><small class="${i.coordStatus==="zatwierdzona"?"ok":""}">${T[i.type].o} · ${i.coordStatus}${ST[i.status]?" · "+ST[i.status].n:""}</small></li>`).join("")}
@@ -85,5 +85,6 @@ $("file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)r
   if(n)mark(true);if(cur)fill();draw();
   alert("Zaktualizowano inwestycji: "+n+"."+(miss.length?"\nNie znaleziono ID: "+miss.join(", "):"")+(n?"\nSprawdź dane i kliknij „Zapisz zmiany”, aby je zatwierdzić.":""))}
  catch(err){alert("Nie udało się wczytać pliku. Użyj pliku .xlsx z szablonu lub z eksportu.")}};
+$("lock").onclick=()=>{lock=!lock;$("lock").textContent=lock?"🔒 Pozycje zablokowane":"🔓 Pozycje odblokowane";$("lock").style.background=lock?"":"#ffe0b2";Object.values(mk).forEach(m=>lock?m.dragging.disable():m.dragging.enable())};
 addEventListener("beforeunload",e=>{if(dirty)e.preventDefault()});
 </script></body></html>
